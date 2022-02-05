@@ -10,8 +10,8 @@
         "start-client": "pm2 start ecosystem.config.js --only reverse-proxy-client --env production",
         "stop-client": "pm2 stop reverse-proxy-client && pm2 delete reverse-proxy-client",
         "restart-client": "npm run stop-client && npm run start-client",
-        "dev-server": "NODE_ENV=development nodemon -r dotenv/config server.js",
-        "dev-client": "NODE_ENV=development nodemon -r dotenv/config client.js",
+        "dev-server": "NODE_ENV=development nodemon server.js",
+        "dev-client": "NODE_ENV=development nodemon client.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "IzeroCs",
@@ -21,6 +21,7 @@
         "crypto-js": "^4.1.1",
         "dotenv": "^16.0.0",
         "express": "^4.17.2",
+        "hashmap": "^2.4.0",
         "ipify2": "^1.1.2",
         "jsonwebtoken": "^8.5.1",
         "redbird": "^0.10.0",

@@ -6,7 +6,8 @@ const crypto     = require("crypto-js")
 const validateIP = require("validate-ip-node")
 const axios      = require("axios")
 const path       = require("path")
-console.log("ENV: ", process.env.NODE_ENV)
+const hashmap     = require("hashmap")
+
 if (process.env.NODE_ENV == "production")
     require("dotenv").config({ path: ".env" })
 else
@@ -27,6 +28,7 @@ const PUBLIC_KEY_JWT     = process.env.PATH_JWT_PUBLIC_KEY   || "./public.key"
 const SECRET_KEY_AES     = process.env.PATH_AES_SECRET_KEY   || "./secret.key"
 const IP_UPDATE_FILE     = process.env.PATH_IP_UPDATE_SERVER || "./ip.server"
 const PROXY_REGISTER     = process.env.PATH_PROXY_REGISTER   || "./proxy.json"
+const PROXY_REGISTER_RUN = NODE_PRODUCTION && fs.existsSync(PROXY_REGISTER)
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
 const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
@@ -68,6 +70,8 @@ let crypto_message = process.env.CRYPTO_MESSAGE || "IzeroCs"
 let ip_update      = ""
 let time_update    = 0
 let busy_update    = false
+let proxy_lists    = {}
+let proxy_register = new hashmap()
 
 if (fs.existsSync(IP_UPDATE_FILE)) {
     let ip = fs.readFileSync(IP_UPDATE_FILE, "utf-8").trim()
@@ -76,9 +80,54 @@ if (fs.existsSync(IP_UPDATE_FILE)) {
         ip_update = ip
 }
 
+if (PROXY_REGISTER_RUN) {
+    try {
+        proxy_lists = JSON.parse(fs.readFileSync(PROXY_REGISTER, "utf-8"))
+    } catch (e) {
+        console.log("Parse Proxy Register Failed")
+    }
+}
+
+function register_proxy_lists() {
+    Object.keys(proxy_lists).forEach(host => {
+        const src        = host.substring(host.indexOf("://") + 3)
+        const target     = proxy_lists[host].replace("${IP_UPDATE}", ip_update)
+        const ssl_enable = host.startsWith("https")
+        const ssl_key    = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_PRIVKEY_NAME)
+        const ssl_cert   = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_CERT_NAME)
+
+        if (ssl_enable && fs.existsSync(ssl_key) && fs.existsSync(ssl_cert)) {
+            proxy.register(src, target, {
+                ssl: {
+                    key: ssl_key,
+                    cert: ssl_cert
+                }
+            })
+        } else {
+            proxy.register(src, target, { ssl: false })
+        }
+
+        proxy_register.set(src, target)
+    })
+}
+
+function unregister_proxy_lists() {
+    proxy_register.entries().forEach((target, src) => {
+        proxy.unregister(src, target)
+        proxy_register.delete(src)
+    })
+}
+
 function set_ip_update(ip) {
     ip_update = ip
     fs.writeFileSync(IP_UPDATE_FILE, ip_update)
+
+    if (PROXY_REGISTER_RUN) {
+        console.log("Update proxy lists...")
+
+        unregister_proxy_lists()
+        register_proxy_lists()
+    }
 }
 
 app.use(express.json())
@@ -162,31 +211,5 @@ if (!LETSENCRYPT_LIVE_PATH || !fs.existsSync(router_update_key) || !fs.existsSyn
     })
 }
 
-if (NODE_PRODUCTION && fs.existsSync(PROXY_REGISTER)) {
-    let proxy_lists = {}
-
-    try {
-        proxy_lists = JSON.parse(fs.readFileSync(PROXY_REGISTER, "utf-8"))
-    } catch (e) {
-        console.log("Parse Proxy Register Failed")
-    } finally {
-        Object.keys(proxy_lists).forEach(host => {
-            const src        = host.substring(host.indexOf("://") + 3)
-            const target     = proxy_lists[host].replace("${IP_UPDATE}", ip_update)
-            const ssl_enable = host.startsWith("https")
-            const ssl_key    = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_PRIVKEY_NAME)
-            const ssl_cert   = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_CERT_NAME)
-
-            if (ssl_enable && fs.existsSync(ssl_key) && fs.existsSync(ssl_cert)) {
-                proxy.register(src, target, {
-                    ssl: {
-                        key: ssl_key,
-                        cert: ssl_cert
-                    }
-                })
-            } else {
-                proxy.register(src, target, { ssl: false })
-            }
-        })
-    }
-}
+if (PROXY_REGISTER_RUN)
+    register_proxy_lists()
