@@ -4,6 +4,14 @@
     "description": "",
     "main": "app.js",
     "scripts": {
+        "start-server": "pm2 start ecosystem.config.js --only reverse-proxy-server --env production",
+        "stop-server": "pm2 stop reverse-proxy-server && pm2 delete reverse-proxy-server",
+        "restart-server": "npm run stop-server && npm run start-server",
+        "start-client": "pm2 start ecosystem.config.js --only reverse-proxy-client --env production",
+        "stop-client": "pm2 stop reverse-proxy-client && pm2 delete reverse-proxy-client",
+        "restart-client": "npm run stop-client && npm run start-client",
+        "dev-server": "NODE_ENV=development nodemon -r dotenv/config server.js",
+        "dev-client": "NODE_ENV=development nodemon -r dotenv/config client.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "IzeroCs",

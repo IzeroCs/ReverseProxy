@@ -3,16 +3,22 @@ const fs         = require("fs")
 const axios      = require("axios")
 const crypto     = require("crypto-js")
 const express    = require("express")
-const dotenv     = require("dotenv").config()
 const validateIP = require("validate-ip-node")
 const ippub      = require("ipify2")
+const https      = require("https")
 
 const { AbortController } = require("axios")
 
+if (process.env.NODE_ENV == "production")
+    require("dotenv").config({ path: ".env" })
+else
+    require("dotenv").config({ path: ".env.development"})
+
+const NODE_PRODUCTION      = process.env.NODE_ENV == "production"
 const PRIVATE_KEY_JWT      = "./private.key"
 const SECRET_KEY_AES       = "./secret.key"
 const IP_UPDATE_FILE       = "./ip.client"
-const ROUTER_TOKEN_PORT    = 9912
+const ROUTER_TOKEN_PORT    = process.env.ROUTER_TOKEN_PORT || 9912
 
 if (!process.env.DOMAIN_ROUTER_UPDATE)
     throw Error("Not found env DOMAIN_ROUTER_UPDATE, put to env")
@@ -86,6 +92,15 @@ setInterval(() => {
             method: "POST",
             url: URL_ROUTER_UPDATE_IP,
             cancelToken: axios_source.token,
+            httpsAgent: (() => {
+                if (URL_ROUTER_UPDATE_IP.startsWith("https")) {
+                    return new https.Agent({
+                        rejectUnauthorized: false
+                    })
+                }
+
+                return new https.Agent({ keepAlive: true })
+            })(),
             data: {
                 token: token,
                 rsi: crypto.AES.encrypt(crypto_message,

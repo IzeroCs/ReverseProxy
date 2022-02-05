@@ -1,0 +1,5 @@
+{
+    "https://smarthome.izerocs.ga": "http://${IP_UPDATE}:8123",
+    "https://emby.izerocs.ga": "http://${IP_UPDATE}:8069",
+    "https://books.izerocs.ga": "http://${IP_UPDATE}:2665"
+}

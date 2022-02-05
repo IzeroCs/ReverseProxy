@@ -3,10 +3,14 @@ const express    = require("express")
 const jwt        = require("jsonwebtoken")
 const fs         = require("fs")
 const crypto     = require("crypto-js")
-const dotenv     = require("dotenv").config()
 const validateIP = require("validate-ip-node")
 const axios      = require("axios")
 const path       = require("path")
+console.log("ENV: ", process.env.NODE_ENV)
+if (process.env.NODE_ENV == "production")
+    require("dotenv").config({ path: ".env" })
+else
+    require("dotenv").config({ path: ".env.development"})
 
 const {
     TokenExpiredError,
@@ -14,12 +18,14 @@ const {
 } = require("jsonwebtoken")
 const { deepStrictEqual } = require("assert")
 
-const REDBIRD_PORT       = 8080
-const ROUTER_UPDATE_PORT = 9911
-const ROUTER_TOKEN_PORT  = 9912
+const NODE_PRODUCTION    = process.env.NODE_ENV == "production"
+const REDBIRD_PORT       = process.env.REDBIRD_PROXY_PORT || 80
+const ROUTER_UPDATE_PORT = process.env.ROUTER_UPDATE_PORT || 9911
+const ROUTER_TOKEN_PORT  = process.env.ROUTER_TOKEN_PORT  || 9912
 const PUBLIC_KEY_JWT     = "./public.key"
 const SECRET_KEY_AES     = "./secret.key"
 const IP_UPDATE_FILE     = "./ip.server"
+const PROXY_REGISTER     = "./proxy.json"
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
 const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
@@ -50,7 +56,12 @@ if (!process.env.DOMAIN_ROUTER_UPDATE)
 const app    = express()
 const pubkey = fs.readFileSync(PUBLIC_KEY_JWT, "utf-8")
 const secret = fs.readFileSync(SECRET_KEY_AES, "utf-8")
-const proxy  = redbird({ port: REDBIRD_PORT, xfwd: false, ssl: { port: 443 } })
+const proxy  = (() => {
+    if (NODE_PRODUCTION)
+        return redbird({ port: REDBIRD_PORT, xfwd: false, ssl: { port: 443 } })
+
+    return redbird({ port: REDBIRD_PORT, xfwd: false })
+})()
 
 let crypto_message = process.env.CRYPTO_MESSAGE || "IzeroCs"
 let ip_update      = ""
@@ -70,6 +81,7 @@ function set_ip_update(ip) {
 }
 
 app.use(express.json())
+app.get("/", (req, res) => res.send("Router update IP..."))
 app.post("/update", (req, res) => {
     if (!busy_update) {
         busy_update = true
@@ -144,4 +156,33 @@ if (!LETSENCRYPT_LIVE_PATH || !fs.existsSync(router_update_key) || !fs.existsSyn
             cert: router_update_cert
         }
     })
+}
+
+if (NODE_PRODUCTION && fs.existsSync(PROXY_REGISTER)) {
+    let proxy_lists = {}
+
+    try {
+        proxy_lists = JSON.parse(fs.readFileSync(PROXY_REGISTER, "utf-8"))
+    } catch (e) {
+        console.log("Parse Proxy Register Failed")
+    } finally {
+        Object.keys(proxy_lists).forEach(host => {
+            const src        = host.substring(host.indexOf("://") + 3)
+            const target     = proxy_lists[host].replace("${IP_UPDATE}", ip_update)
+            const ssl_enable = host.startsWith("https")
+            const ssl_key    = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_PRIVKEY_NAME)
+            const ssl_cert   = path.join(LETSENCRYPT_LIVE_PATH, src, LETSENCRYPT_CERT_NAME)
+
+            if (ssl_enable && fs.existsSync(ssl_key) && fs.existsSync(ssl_cert)) {
+                proxy.register(src, target, {
+                    ssl: {
+                        key: ssl_key,
+                        cert: ssl_cert
+                    }
+                })
+            } else {
+                proxy.register(src, target, { ssl: false })
+            }
+        })
+    }
 }
