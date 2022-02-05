@@ -6,11 +6,13 @@ const crypto     = require("crypto-js")
 const dotenv     = require("dotenv").config()
 const validateIP = require("validate-ip-node")
 const axios      = require("axios")
+const path       = require("path")
 
 const {
     TokenExpiredError,
     JsonWebTokenError
 } = require("jsonwebtoken")
+const { deepStrictEqual } = require("assert")
 
 const REDBIRD_PORT       = 8080
 const ROUTER_UPDATE_PORT = 9911
@@ -21,6 +23,9 @@ const IP_UPDATE_FILE     = "./ip.server"
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
 const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
+const LETSENCRYPT_LIVE_PATH            = process.env.LETSENCRYPT_LIVE_PATH            || null
+const LETSENCRYPT_PRIVKEY_NAME         = process.env.LETSENCRYPT_PRIVKEY_NAME         || "privkey.pem"
+const LETSENCRYPT_CERT_NAME            = process.env.LETSENCRYPT_CERT_NAME            || "cert.pem"
 const DOMAIN_ROUTER_UPDATE             = (() => {
     let domain = process.env.DOMAIN_ROUTER_UPDATE
 
@@ -126,4 +131,17 @@ app.listen(ROUTER_UPDATE_PORT, "127.0.0.1", () => {
     console.log("Router update IP run on 127.0.0.1:" + ROUTER_UPDATE_PORT)
 })
 
-proxy.register(DOMAIN_ROUTER_UPDATE, "127.0.0.1:" + ROUTER_UPDATE_PORT, { ssl: false })
+const router_update_letsencrypt = path.join(LETSENCRYPT_LIVE_PATH, DOMAIN_ROUTER_UPDATE)
+const router_update_key         = path.join(router_update_letsencrypt, LETSENCRYPT_PRIVKEY_NAME)
+const router_update_cert        = path.join(router_update_letsencrypt, LETSENCRYPT_CERT_NAME)
+
+if (!LETSENCRYPT_LIVE_PATH || !fs.existsSync(router_update_key) || !fs.existsSync(router_update_cert)) {
+    proxy.register(DOMAIN_ROUTER_UPDATE, "127.0.0.1:" + ROUTER_UPDATE_PORT, { ssl: false })
+} else {
+    proxy.register(DOMAIN_ROUTER_UPDATE, "127.0.0.1:" + ROUTER_UPDATE_PORT, {
+        ssl: {
+            key: key,
+            cert: cert
+        }
+    })
+}
