@@ -60,15 +60,22 @@ const app    = express()
 const pubkey = fs.readFileSync(PUBLIC_KEY_JWT, "utf-8")
 const secret = fs.readFileSync(SECRET_KEY_AES, "utf-8")
 const proxy  = (() => {
-    const bunyan = {
-        enabled: true,
-        timestamp: false,
+    const opts = {
+        port: REDBIRD_PORT,
+        xfwd: false,
+        bunyan: {
+            enabled: true,
+            timestamp: false
+        }
     }
 
-    if (NODE_PRODUCTION)
-        return redbird({ port: REDBIRD_PORT, xfwd: false, ssl: { port: 443 },  bunyan: bunyan })
+    if (NODE_PRODUCTION) {
+        opts["ssl"] = {
+            port: 443,
+        }
+    }
 
-    return redbird({ port: REDBIRD_PORT, xfwd: false, bunyan: bunyan })
+    return redbird(opts)
 })()
 
 let crypto_message = process.env.CRYPTO_MESSAGE || "IzeroCs"
