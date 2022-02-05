@@ -50,7 +50,7 @@ if (!process.env.DOMAIN_ROUTER_UPDATE)
 const app    = express()
 const pubkey = fs.readFileSync(PUBLIC_KEY_JWT, "utf-8")
 const secret = fs.readFileSync(SECRET_KEY_AES, "utf-8")
-const proxy  = redbird({ port: REDBIRD_PORT, xfwd: false })
+const proxy  = redbird({ port: REDBIRD_PORT, xfwd: false, ssl: { port: 443 } })
 
 let crypto_message = process.env.CRYPTO_MESSAGE || "IzeroCs"
 let ip_update      = ""
@@ -140,8 +140,8 @@ if (!LETSENCRYPT_LIVE_PATH || !fs.existsSync(router_update_key) || !fs.existsSyn
 } else {
     proxy.register(DOMAIN_ROUTER_UPDATE, "127.0.0.1:" + ROUTER_UPDATE_PORT, {
         ssl: {
-            key: key,
-            cert: cert
+            key: router_update_key,
+            cert: router_update_cert
         }
     })
 }
