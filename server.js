@@ -21,6 +21,17 @@ const IP_UPDATE_FILE     = "./ip.server"
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
 const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
+const DOMAIN_ROUTER_UPDATE             = (() => {
+    let domain = process.env.DOMAIN_ROUTER_UPDATE
+
+    if (domain.startsWith("http"))
+        domain = domain.substring(domain.indexOf("://") + 3)
+
+    if (/\:[0-9]+\/?$/.test(domain))
+        domain = domain.substring(0, domain.lastIndexOf(":"))
+
+    return domain
+})()
 
 if (!fs.existsSync(PUBLIC_KEY_JWT))
     throw Error("Public key for JsonWebToken not found, generator new key and put to folder")
@@ -78,7 +89,6 @@ app.post("/update", (req, res) => {
             if (!validateIP(decoded.ip))
                 return res.sendStatus(400)
 
-                console.log("Send request")
             if (ip_update == decoded.ip)
                 return res.send("NOTUPDATE")
 
@@ -116,4 +126,4 @@ app.listen(ROUTER_UPDATE_PORT, "127.0.0.1", () => {
     console.log("Router update IP run on 127.0.0.1:" + ROUTER_UPDATE_PORT)
 })
 
-proxy.register("192.168.31.114", "127.0.0.1:" + ROUTER_UPDATE_PORT, { ssl: false })
+proxy.register(DOMAIN_ROUTER_UPDATE, "127.0.0.1:" + ROUTER_UPDATE_PORT, { ssl: false })

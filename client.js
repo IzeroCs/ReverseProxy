@@ -13,12 +13,22 @@ const PRIVATE_KEY_JWT      = "./private.key"
 const SECRET_KEY_AES       = "./secret.key"
 const IP_UPDATE_FILE       = "./ip.client"
 const ROUTER_TOKEN_PORT    = 9912
-const URL_ROUTER_UPDATE_IP = "http://192.168.31.114:8080/update"
+
+if (!process.env.DOMAIN_ROUTER_UPDATE)
+    throw Error("Not found env DOMAIN_ROUTER_UPDATE, put to env")
 
 const TIME_CLIENT_CANCEL_REQUEST    = process.env.TIME_CLIENT_CANCEL_REQUEST    || 5000
 const TIME_CLIENT_INTERVAL_REQUEST  = process.env.TIME_CLIENT_INTERVAL_REQUEST  || 10000
 const TIME_CLIENT_RESOLVE_PUBLIC_IP = process.env.TIME_CLIENT_RESOLVE_PUBLIC_IP || 10000
 const TIME_CLIENT_BETWEEN_REQUEST   = process.env.TIME_CLIENT_BETWEEN_REQUEST   || 10000
+const URL_ROUTER_UPDATE_IP          = (() => {
+    let domain = process.env.DOMAIN_ROUTER_UPDATE
+
+    if (!domain.startsWith("http"))
+        domain = "http://" + domain
+
+    return domain + "/update"
+})()
 
 if (!fs.existsSync(PRIVATE_KEY_JWT))
     throw Error("Public key for JsonWebToken not found, generator and put to folder")
@@ -33,10 +43,17 @@ const app     = express()
 const crypto_message = process.env.CRYPTO_MESSAGE || "IzeroCs"
 
 let axios_source = null
-let ip_update    = "192.168.31.114"
+let ip_update    = null
 let busy_update  = false
 let busy_time    = Date.now()
 let token        = ""
+
+if (fs.existsSync(IP_UPDATE_FILE)) {
+    const ip = fs.readFileSync(IP_UPDATE_FILE, "utf-8")
+
+    if (validateIP(ip))
+        ip_update = ip
+}
 
 function sign() {
     return jwt.sign({
@@ -118,7 +135,9 @@ setInterval(() => {
 
 setInterval(() => {
     ippub.ipv4().then(ip => {
-        if (validateIP(ip))
+        if (validateIP(ip)) {
+            ip_update = ip
             fs.writeFileSync(IP_UPDATE_FILE, ip)
+        }
     }).catch(err => console.log("Error: Resolve IP Failed"))
 }, TIME_CLIENT_RESOLVE_PUBLIC_IP)
