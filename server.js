@@ -19,13 +19,14 @@ const {
 const { deepStrictEqual } = require("assert")
 
 const NODE_PRODUCTION    = process.env.NODE_ENV == "production"
-const REDBIRD_PORT       = process.env.REDBIRD_PROXY_PORT || 80
-const ROUTER_UPDATE_PORT = process.env.ROUTER_UPDATE_PORT || 9911
-const ROUTER_TOKEN_PORT  = process.env.ROUTER_TOKEN_PORT  || 9912
-const PUBLIC_KEY_JWT     = "./public.key"
-const SECRET_KEY_AES     = "./secret.key"
-const IP_UPDATE_FILE     = "./ip.server"
-const PROXY_REGISTER     = "./proxy.json"
+const REDBIRD_PORT       = process.env.REDBIRD_PROXY_PORT    || 80
+const ROUTER_UPDATE_PORT = process.env.ROUTER_UPDATE_PORT    || 9911
+const ROUTER_TOKEN_PORT  = process.env.ROUTER_TOKEN_PORT     || 9912
+const ROUTER_TOKEN_PATH  = process.env.ROUTER_TOKEN_PATH     || "/token"
+const PUBLIC_KEY_JWT     = process.env.PATH_JWT_PUBLIC_KEY   || "./public.key"
+const SECRET_KEY_AES     = process.env.PATH_AES_SECRET_KEY   || "./secret.key"
+const IP_UPDATE_FILE     = process.env.PATH_IP_UPDATE_SERVER || "./ip.server"
+const PROXY_REGISTER     = process.env.PATH_PROXY_REGISTER   || "./proxy.json"
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
 const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
@@ -81,8 +82,11 @@ function set_ip_update(ip) {
 }
 
 app.use(express.json())
-app.get("/", (req, res) => res.send("Router update IP..."))
-app.post("/update", (req, res) => {
+
+if (!NODE_PRODUCTION)
+    app.get("/", (req, res) => res.send("Router server update IP..."))
+
+app.post(ROUTER_UPDATE_PATH || "/update", (req, res) => {
     if (!busy_update) {
         busy_update = true
         time_update = Date.now()
@@ -111,7 +115,7 @@ app.post("/update", (req, res) => {
 
             axios({
                 method: "POST",
-                url: "http://" + decoded.ip + ":" + ROUTER_TOKEN_PORT + "/token",
+                url: "http://" + decoded.ip + ":" + ROUTER_TOKEN_PORT + ROUTER_TOKEN_PATH,
                 timeout: TIME_SERVER_RESOLVE_TOKEN_CLIENT
             }).then(res_token => {
                 if (res_token.data == req.body.token) {

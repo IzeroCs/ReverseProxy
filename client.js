@@ -15,10 +15,10 @@ else
     require("dotenv").config({ path: ".env.development"})
 
 const NODE_PRODUCTION      = process.env.NODE_ENV == "production"
-const PRIVATE_KEY_JWT      = "./private.key"
-const SECRET_KEY_AES       = "./secret.key"
-const IP_UPDATE_FILE       = "./ip.client"
-const ROUTER_TOKEN_PORT    = process.env.ROUTER_TOKEN_PORT || 9912
+const PRIVATE_KEY_JWT      = process.env.PATH_JWT_PRIVATE_KEY  || "./private.key"
+const SECRET_KEY_AES       = process.env.PATH_AES_SECRET_KEY   || "./secret.key"
+const IP_UPDATE_FILE       = process.env.PATH_IP_UPDATE_CLIENT || "./ip.client"
+const ROUTER_TOKEN_PORT    = process.env.ROUTER_TOKEN_PORT     || 9912
 
 if (!process.env.DOMAIN_ROUTER_UPDATE)
     throw Error("Not found env DOMAIN_ROUTER_UPDATE, put to env")
@@ -33,7 +33,7 @@ const URL_ROUTER_UPDATE_IP          = (() => {
     if (!domain.startsWith("http"))
         domain = "http://" + domain
 
-    return domain + "/update"
+    return domain + (process.env.ROUTER_UPDATE_PATH || "/update")
 })()
 
 if (!fs.existsSync(PRIVATE_KEY_JWT))
@@ -74,7 +74,11 @@ function sign() {
 }
 
 app.use(express.json())
-app.post("/token", (req, res) => {
+
+if (!NODE_PRODUCTION)
+    app.get("/", (req, res) => res.send("Router client update IP..."))
+
+app.post(process.env.ROUTER_TOKEN_PATH || "/token", (req, res) => {
     res.send(token)
 })
 
