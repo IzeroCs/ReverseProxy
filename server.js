@@ -86,7 +86,7 @@ app.use(express.json())
 if (!NODE_PRODUCTION)
     app.get("/", (req, res) => res.send("Router server update IP..."))
 
-app.post(ROUTER_UPDATE_PATH || "/update", (req, res) => {
+app.post(process.env.ROUTER_UPDATE_PATH || "/update", (req, res) => {
     if (!busy_update) {
         busy_update = true
         time_update = Date.now()
