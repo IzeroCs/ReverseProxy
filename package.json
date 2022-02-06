@@ -1,9 +1,12 @@
 {
     "name": "reverseproxy",
     "version": "1.0.0",
-    "description": "",
-    "main": "app.js",
+    "description": "This Reverse Proxy is used to update the dynamic public IP of the network router",
+    "main": "server.js",
     "scripts": {
+        "start": "npm run start-server",
+        "stop": "npm run stop-server",
+        "restart": "npm run restart-server",
         "start-server": "pm2 start ecosystem.config.js --only reverse-proxy-server --env production",
         "stop-server": "pm2 stop reverse-proxy-server && pm2 delete reverse-proxy-server",
         "restart-server": "npm run stop-server && npm run start-server",
