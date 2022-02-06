@@ -31,7 +31,7 @@ const PROXY_REGISTER     = process.env.PATH_PROXY_REGISTER   || "./proxy.json"
 const PROXY_REGISTER_RUN = NODE_PRODUCTION && fs.existsSync(PROXY_REGISTER)
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
-const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 10000
+const TIME_SERVER_BETWEEN_UPDATE       = process.env.TIME_SERVER_BETWEEN_UPDATE       || 60000
 const LETSENCRYPT_LIVE_PATH            = process.env.LETSENCRYPT_LIVE_PATH            || null
 const LETSENCRYPT_PRIVKEY_NAME         = process.env.LETSENCRYPT_PRIVKEY_NAME         || "privkey.pem"
 const LETSENCRYPT_CERT_NAME            = process.env.LETSENCRYPT_CERT_NAME            || "cert.pem"
