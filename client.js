@@ -15,9 +15,9 @@ else
     require("dotenv").config({ path: ".env.development"})
 
 const NODE_PRODUCTION      = process.env.NODE_ENV == "production"
-const PRIVATE_KEY_JWT      = process.env.PATH_JWT_PRIVATE_KEY  || "./private.key"
-const SECRET_KEY_AES       = process.env.PATH_AES_SECRET_KEY   || "./secret.key"
-const IP_UPDATE_FILE       = process.env.PATH_IP_UPDATE_CLIENT || "./ip.client"
+const PRIVATE_KEY_JWT      = process.env.PATH_JWT_PRIVATE_KEY  || "./assets/private.key"
+const SECRET_KEY_AES       = process.env.PATH_AES_SECRET_KEY   || "./assets/secret.key"
+const IP_UPDATE_FILE       = process.env.PATH_IP_UPDATE_CLIENT || "./assets/ip.client"
 const ROUTER_TOKEN_PORT    = process.env.ROUTER_TOKEN_PORT     || 9912
 
 if (!process.env.DOMAIN_ROUTER_UPDATE)

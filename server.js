@@ -24,10 +24,10 @@ const REDBIRD_PORT       = process.env.REDBIRD_PROXY_PORT    || 80
 const ROUTER_UPDATE_PORT = process.env.ROUTER_UPDATE_PORT    || 9911
 const ROUTER_TOKEN_PORT  = process.env.ROUTER_TOKEN_PORT     || 9912
 const ROUTER_TOKEN_PATH  = process.env.ROUTER_TOKEN_PATH     || "/token"
-const PUBLIC_KEY_JWT     = process.env.PATH_JWT_PUBLIC_KEY   || "./public.key"
-const SECRET_KEY_AES     = process.env.PATH_AES_SECRET_KEY   || "./secret.key"
-const IP_UPDATE_FILE     = process.env.PATH_IP_UPDATE_SERVER || "./ip.server"
-const PROXY_REGISTER     = process.env.PATH_PROXY_REGISTER   || "./proxy.json"
+const PUBLIC_KEY_JWT     = process.env.PATH_JWT_PUBLIC_KEY   || "./assets/public.key"
+const SECRET_KEY_AES     = process.env.PATH_AES_SECRET_KEY   || "./assets/secret.key"
+const IP_UPDATE_FILE     = process.env.PATH_IP_UPDATE_SERVER || "./assets/ip.server"
+const PROXY_REGISTER     = process.env.PATH_PROXY_REGISTER   || "./assets/proxy.json"
 const PROXY_REGISTER_RUN = NODE_PRODUCTION && fs.existsSync(PROXY_REGISTER)
 
 const TIME_SERVER_RESOLVE_TOKEN_CLIENT = process.env.TIME_SERVER_RESOLVE_TOKEN_CLIENT || 10000
