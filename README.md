@@ -48,3 +48,23 @@
 |PATH_PROXY_REGISTER             | Reverse proxy registration list file path                                                             | ./assets/proxy.jon           |
 
 ### For env **DOMAIN ROUTER UPDATE**, if it contains **https://** scheme, the system will check if there is ssl key and ssl cert of the domain in the Let's Encrypt path.
+*********************************
+## NPM run command:
+```
+npm run script
+```
+| Script                                    | Description                             |
+|-------------------------------------------|-----------------------------------------|
+| start, stop, restart                      | Start, Stop, Restart for server         |
+| start-server, stop-server, restart-server | Start, Stop, Restart for server         |
+| start-client, stop-client, restart-client | Start, Stop, Restart for client         |
+| dev-server, dev-client                    | Run server, client NODE_ENV=development |
+
+Install pm2 before using the above scripts
+```
+npm i -g pm2
+```
+If running in development mode, install nodemon
+```
+npm i -g nodemon
+```
